@@ -17,6 +17,18 @@ Count per page: <label>
 </label>
 
 <table id="table" class="table">
+    <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Race</th>
+        <th>Profession</th>
+        <th>Level</th>
+        <th>Birthday</th>
+        <th>Banned</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
 </table>
 <div id="paging" class="paging">
     Pages:
@@ -27,9 +39,7 @@ Count per page: <label>
     function showAccountsPerPage() {
         $.get("/rest/players/count").then(accountSize => {
             const pageSize = $('select').val();
-            console.log(accountSize);
             const pages = Math.ceil(accountSize / pageSize)
-            console.log(pages);
             for (let i = 0; i < pages; i++) {
                 const button = document.createElement('button');
                 button.textContent = "" + (i + 1);
@@ -46,7 +56,7 @@ Count per page: <label>
     }
     function showPlayers(pageNumber, pageSize) {
         $.get("/rest/players", {pageNumber, pageSize}).then(players => {
-            changeButtonColor(pageNumber);
+            changePageButtonColor(pageNumber);
             clearTable();
             players.forEach((player) => {
                 const row = document.createElement('tr');
@@ -64,17 +74,26 @@ Count per page: <label>
                     </tr>
                 `;
 
+                row.appendChild(createCellWithButton("edit"));
+                row.appendChild(createCellWithButton("delete"));
                 document.getElementById("table").appendChild(row);
             });
         }).catch(error => {
             console.error("Error fetching players:", error);
         });
     }
-    function changeButtonColor(pageNumber) {
+    function changePageButtonColor(pageNumber) {
         document.querySelectorAll('#paging button').forEach(button => {
             $(button).css('color', 'black')
         })
         $('#button-' + pageNumber).css('color', 'red')
+    }
+    function createCellWithButton (buttonName) {
+        const button = document.createElement("button");
+        button.className = buttonName + "-button";
+        const cell = document.createElement("td");
+        cell.appendChild(button);
+        return cell;
     }
     function clearTable() {
         document.getElementById("table").innerHTML = `
@@ -87,6 +106,8 @@ Count per page: <label>
             <th>Level</th>
             <th>Birthday</th>
             <th>Banned</th>
+            <th>Edit</th>
+            <th>Delete</th>
         </tr>
     `;
     }

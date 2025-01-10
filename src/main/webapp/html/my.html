@@ -65,27 +65,31 @@ Count per page: <label>
             clearTable();
             players.forEach((player) => {
                 const row = document.createElement('tr');
+                const id = player.id;
+                row.id = "tr-" + id;
 
                 row.innerHTML = `
                     <tr>
-                        <td>${player.id}</td>
-                        <td>${player.name}</td>
-                        <td>${player.title}</td>
-                        <td>${player.race}</td>
-                        <td>${player.profession}</td>
+                        <td>${id}</td>
+                        <td class="text-cell" id="name-cell-${id}">${player.name}</td>
+                        <td class="text-cell" id="title-cell-${id}">${player.title}</td>
+                        <td class="change-cell" id="change-race-${id}">${player.race}</td>
+                        <td class="change-cell" id="change-prof-${id}">${player.profession}</td>
                         <td>${player.level}</td>
                         <td>${new Date(player.birthday).toLocaleDateString()}</td>
-                        <td>${player.banned ? 'Yes' : 'No'}</td>
+                        <td class="change-cell" id="change-ban-${id}">${player.banned ? 'Yes' : 'No'}</td>
                     </tr>
                 `;
-
                 const editCell = document.createElement("td");
                 const deleteCell = document.createElement("td");
-                const editButton = createButton("edit");
-                const deleteButton = createButton("delete");
+                const editButton = createControlButton("edit", player.id);
+                const deleteButton = createControlButton("delete", player.id);
                 deleteButton.addEventListener("click", ()=> {
                     deletePlayer(player.id, pageNumber);
                 });
+                editButton.addEventListener("click", ()=> {
+                    editPlayer(player.id, pageNumber);
+                })
 
                 editCell.appendChild(editButton);
                 deleteCell.appendChild(deleteButton);
@@ -109,16 +113,89 @@ Count per page: <label>
             console.error("Error deleting player with id: " + id, error);
         });
     }
+    function editPlayer(id, pageNumber) {
+        const deleteButton = document.getElementById(id + "-delete-button");
+        if (deleteButton != null) {deleteButton.remove();}
+
+        const editButton = document.getElementById(id + "-edit-button");
+        editButton.style.backgroundImage = "url('/img/save.png')";
+
+        const row = document.getElementById("tr-" + id);
+        const params = [];
+
+        row.querySelectorAll('.text-cell').forEach((cell, index) => {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = cell.textContent;
+            input.addEventListener("input", () => {
+                params[index] = input.value;
+            });
+            cell.textContent = "";
+            cell.appendChild(input);
+        });
+
+        row.querySelectorAll('.change-cell').forEach((cell, index) => {
+            index += 2;
+
+            const select = document.createElement("select");
+
+            const races = ["HUMAN", "DWARF","ELF", "GIANT", "TROLL", "ORC", "HOBBIT"];
+            const professions = ["WARRIOR", "ROGUE", "SORCERER", "CLERIC", "PALADIN", "NAZGUL", "WARLOCK", "DRUID"];
+            const banned = ["Yes", "No"];
+
+            switch (cell.id) {
+                case "change-race-" + id: {changeSelectParameter(races, select);} break;
+                case "change-prof-" + id: {changeSelectParameter(professions, select);} break;
+                case "change-ban-" + id: {changeSelectParameter(banned, select);} break;
+                default: console.warn("Unexpected cell ID: " + cell.id); break;
+            }
+            select.value = cell.textContent;
+            select.addEventListener("change", () => {
+                params[index] = select.value;
+            });
+            cell.textContent = "";
+            cell.appendChild(select);
+        });
+
+        editButton.addEventListener("click", ()=> {
+            const playerInfo = {
+                name: params[0],
+                title: params[1],
+                race: params[2],
+                profession: params[3],
+                banned: params[4] === "Yes"
+            };
+            $.ajax({
+                type: "POST",
+                url: `/rest/players/${id}`,
+                data: JSON.stringify(playerInfo),
+                contentType: "application/json"
+            }).then(() => {
+                showAccountsPerPage(pageNumber);
+                console.log(`Player with ID ${id} edited successfully.`);
+            }).catch(error => {
+                console.error("Error editing player with id: " + id, error);
+            });
+        });
+    }
     function changePageButtonColor(pageNumber) {
         document.querySelectorAll('#paging button').forEach(button => {
             $(button).css('color', 'black')
         })
         $('#button-' + pageNumber).css('color', 'red')
     }
-    function createButton (buttonName) {
+    function createControlButton (buttonName, playerId) {
         const button = document.createElement("button");
         button.className = buttonName + "-button";
+        button.id = playerId + "-" + buttonName + "-button";
         return button;
+    }
+    function changeSelectParameter(paramsList, select) {
+        paramsList.forEach(parameter => {
+            const option = document.createElement("option");
+            option.textContent = parameter;
+            select.appendChild(option);
+        });
     }
     function clearTable() {
         document.getElementById("table").innerHTML = `

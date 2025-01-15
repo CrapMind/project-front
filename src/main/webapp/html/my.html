@@ -8,7 +8,7 @@
 <h1>RPG admin panel</h1>
 <h2>Accounts list:</h2>
 Count per page: <label>
-    <select>
+    <select id="page-selector">
         <option value="3">3</option>
         <option value="7">7</option>
         <option value="15">15</option>
@@ -33,14 +33,66 @@ Count per page: <label>
 <div id="paging" class="paging">
     Pages:
 </div>
+<div id="paging-line"></div>
+<div id="account-creating">Create New Account: </div>
+<label>
+    <b>Name:</b> <input id="name-input" type="text" maxlength="12" minlength="1" placeholder="from 1 to 12 characters"> <br>
+    <b>Title:</b> <input id="title-input" type="text" maxlength="30" minlength="1" placeholder="from 1 to 30 characters"> <br>
+    <b>Race:</b> <select id="race-select"></select> <br>
+    <b>Profession:</b> <select id="profession-select"></select> <br>
+    <b>Level:</b> <input id="level-input" type="number" maxlength="100" minlength="1" placeholder="from 1 to 100"> <br>
+    <b>Birthday:</b> <input id="birthday-input" type="date"><br>
+    <b>Banned:</b> <select id="banned-select"> <option value="false">No</option> <option value="true">Yes</option></select> <br>
+</label>
+<button id="save-button">Save</button>
+
 <script>
 
-    const selectedPageSize = $('select');
+    const selectedPageSize = $('#page-selector');
+    let currentPageNumber = 0;
+
+    const races = ["HUMAN", "DWARF","ELF", "GIANT", "TROLL", "ORC", "HOBBIT"];
+    const professions = ["WARRIOR", "ROGUE", "SORCERER", "CLERIC", "PALADIN", "NAZGUL", "WARLOCK", "DRUID"];
+    const banned = ["Yes", "No"];
+
+    selectedPageSize.on('change', () => {
+        currentPageNumber = 0;
+        initializePage();
+    });
+
+    $(document).ready(() => {
+        const raceSelect = $('#race-select');
+        races.forEach(race => {
+            const option = $('<option>').val(race).text(race);
+            raceSelect.append(option);
+        });
+
+        const professionSelect = $('#profession-select');
+        professions.forEach(profession => {
+            const option = $('<option>').val(profession).text(profession);
+            professionSelect.append(option);
+        });
+
+        initializePage();
+    });
+
+    const saveButton = document.getElementById("save-button");
+    saveButton.addEventListener("click", () => {
+        createPlayer();
+        $('#name-input').val('');
+        $('#title-input').val('');
+        $('#race-select').val(races[0]);
+        $('#profession-select').val(professions[0]);
+        $('#level-input').val('');
+        $('#birthday-input').val('');
+        $('#banned-select').val('false');
+    });
     function showAccountsPerPage(pageNumber) {
         document.querySelectorAll('#paging button').forEach(button => {
             button.remove();
         });
         $.get("/rest/players/count").then(accountSize => {
+
             const pageSize = selectedPageSize.val();
             clearTable();
             showPlayers(pageNumber, pageSize);
@@ -50,10 +102,11 @@ Count per page: <label>
                 button.textContent = "" + (i + 1);
                 button.id = "button-" + i;
                 button.addEventListener('click', () => {
+                    currentPageNumber = i;
+                    console.log(currentPageNumber)
                     showPlayers(i, pageSize);
                 });
                 document.getElementById('paging').appendChild(button);
-
             }
         }).catch(error => {
             console.error("Error fetching account count:", error)
@@ -139,10 +192,6 @@ Count per page: <label>
 
             const select = document.createElement("select");
 
-            const races = ["HUMAN", "DWARF","ELF", "GIANT", "TROLL", "ORC", "HOBBIT"];
-            const professions = ["WARRIOR", "ROGUE", "SORCERER", "CLERIC", "PALADIN", "NAZGUL", "WARLOCK", "DRUID"];
-            const banned = ["Yes", "No"];
-
             switch (cell.id) {
                 case "change-race-" + id: {changeSelectParameter(races, select);} break;
                 case "change-prof-" + id: {changeSelectParameter(professions, select);} break;
@@ -197,6 +246,30 @@ Count per page: <label>
             select.appendChild(option);
         });
     }
+    function createPlayer() {
+        const playerParams = {
+            name: $('#name-input').val(),
+            title: $('#title-input').val(),
+            race: $('#race-select').val(),
+            profession: $('#profession-select').val(),
+            level: $('#level-input').val(),
+            birthday: new Date($('#birthday-input').val()).getTime(),
+            banned: $('#banned-select').val() === "true"
+        }
+        console.log(playerParams)
+            $.ajax({
+                type: "POST",
+                url: `/rest/players`,
+                data: JSON.stringify(playerParams),
+                contentType: "application/json"
+            }).then(() => {
+                clearTable();
+                showAccountsPerPage(currentPageNumber);
+                console.log(`Player was created successfully.`);
+            }).catch(error => {
+                console.error("Error creating player", error);
+            });
+    }
     function clearTable() {
         document.getElementById("table").innerHTML = `
         <tr>
@@ -220,9 +293,6 @@ Count per page: <label>
         showAccountsPerPage(0);
         showPlayers(0, selectedPageSize.val());
     }
-
-    selectedPageSize.on('change', initializePage);
-    window.onload = initializePage;
 
 </script>
 

@@ -48,19 +48,22 @@ Count per page: <label>
 
 <script>
 
+    // Variable for storing the current page number
     const selectedPageSize = $('#page-selector');
     let currentPageNumber = 0;
 
+    // Possible values for races and professions
     const races = ["HUMAN", "DWARF","ELF", "GIANT", "TROLL", "ORC", "HOBBIT"];
     const professions = ["WARRIOR", "ROGUE", "SORCERER", "CLERIC", "PALADIN", "NAZGUL", "WARLOCK", "DRUID"];
     const banned = ["Yes", "No"];
 
+    // Event for changing the number of records on page
     selectedPageSize.on('change', () => {
-        currentPageNumber = 0;
-        initializePage();
+        currentPageNumber = 0; // Reset the current page
+        initializePage(); // Reload the table
     });
-
     $(document).ready(() => {
+        // Filling in the race and profession selectors
         const raceSelect = $('#race-select');
         races.forEach(race => {
             const option = $('<option>').val(race).text(race);
@@ -75,10 +78,11 @@ Count per page: <label>
 
         initializePage();
     });
-
+    // "Save-button" creating and assignment event for creating player
     const saveButton = document.getElementById("save-button");
     saveButton.addEventListener("click", () => {
         createPlayer();
+        // Reset fields and selectors after creating new player
         $('#name-input').val('');
         $('#title-input').val('');
         $('#race-select').val(races[0]);
@@ -89,20 +93,20 @@ Count per page: <label>
     });
     function showAccountsPerPage(pageNumber) {
         document.querySelectorAll('#paging button').forEach(button => {
-            button.remove();
+            button.remove(); // Remove old buttons
         });
         $.get("/rest/players/count").then(accountSize => {
 
-            const pageSize = selectedPageSize.val();
+            const pageSize = selectedPageSize.val(); // Variable that stores number of records on the page
             clearTable();
-            showPlayers(pageNumber, pageSize);
+            showPlayers(pageNumber, pageSize); // Show players on current page
             const pages = Math.ceil(accountSize / pageSize);
             for (let i = 0; i < pages; i++) {
                 const button = document.createElement('button');
-                button.textContent = "" + (i + 1);
+                button.textContent = "" + (i + 1); // Page number
                 button.id = "button-" + i;
                 button.addEventListener('click', () => {
-                    currentPageNumber = i;
+                    currentPageNumber = i; // Set the current page
                     console.log(currentPageNumber)
                     showPlayers(i, pageSize);
                 });
@@ -112,15 +116,18 @@ Count per page: <label>
             console.error("Error fetching account count:", error)
         })
     }
+    // Getting and displaying players by current page and selected records
     function showPlayers(pageNumber, pageSize) {
         $.get("/rest/players", {pageNumber, pageSize}).then(players => {
-            changePageButtonColor(pageNumber);
+            changePageButtonColor(pageNumber); // Highlight the active page
             clearTable();
             players.forEach((player) => {
                 const row = document.createElement('tr');
                 const id = player.id;
                 row.id = "tr-" + id;
 
+                // Forming a table row with player data
+                // Assignment appropriates classes to text or selection cells (for player editing)
                 row.innerHTML = `
                     <tr>
                         <td>${id}</td>
@@ -133,6 +140,7 @@ Count per page: <label>
                         <td class="change-cell" id="change-ban-${id}">${player.banned ? 'Yes' : 'No'}</td>
                     </tr>
                 `;
+                // Creating buttons for editing and deleting an account
                 const editCell = document.createElement("td");
                 const deleteCell = document.createElement("td");
                 const editButton = createControlButton("edit", player.id);
@@ -160,7 +168,7 @@ Count per page: <label>
             type: "DELETE",
             url: `/rest/players/${id}`,
         }).then(() => {
-            showAccountsPerPage(pageNumber);
+            showAccountsPerPage(pageNumber); // Reload the table
             console.log(`Player with ID ${id} deleted successfully.`);
         }).catch(error => {
             console.error("Error deleting player with id: " + id, error);
@@ -168,14 +176,15 @@ Count per page: <label>
     }
     function editPlayer(id, pageNumber) {
         const deleteButton = document.getElementById(id + "-delete-button");
-        if (deleteButton != null) {deleteButton.remove();}
+        if (deleteButton != null) {deleteButton.remove();} // Removing delete button while editing
 
         const editButton = document.getElementById(id + "-edit-button");
-        editButton.style.backgroundImage = "url('/img/save.png')";
+        editButton.style.backgroundImage = "url('/img/save.png')"; // Change the icon of the edit button during editing
 
         const row = document.getElementById("tr-" + id);
-        const params = [];
+        const params = []; // Create an array that stores parameters selected by the admin
 
+        // Loop through all text cells, creating edit fields and storing selected values
         row.querySelectorAll('.text-cell').forEach((cell, index) => {
             const input = document.createElement("input");
             input.type = "text";
@@ -187,6 +196,7 @@ Count per page: <label>
             cell.appendChild(input);
         });
 
+        // Loop through all selector cells, creating selectors and storing the selected values
         row.querySelectorAll('.change-cell').forEach((cell, index) => {
             index += 2;
 
@@ -207,6 +217,7 @@ Count per page: <label>
         });
 
         editButton.addEventListener("click", ()=> {
+            // Transfer of received values
             const playerInfo = {
                 name: params[0],
                 title: params[1],
@@ -220,7 +231,7 @@ Count per page: <label>
                 data: JSON.stringify(playerInfo),
                 contentType: "application/json"
             }).then(() => {
-                showAccountsPerPage(pageNumber);
+                showAccountsPerPage(pageNumber); // Reload the table
                 console.log(`Player with ID ${id} edited successfully.`);
             }).catch(error => {
                 console.error("Error editing player with id: " + id, error);
@@ -293,7 +304,6 @@ Count per page: <label>
         showAccountsPerPage(0);
         showPlayers(0, selectedPageSize.val());
     }
-
 </script>
 
 </body>

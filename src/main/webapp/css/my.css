@@ -1,3 +1,20 @@
 .table td, th {
     border: 1px solid black;
 }
+
+.edit-button {
+    background-image: url("/img/edit.png");
+}
+
+.delete-button {
+    background-image: url("/img/delete.png");
+}
+
+.edit-button, .delete-button {
+    width: 40px;
+    height: 40px;
+    background-size: cover;
+    background-position: center;
+    border: black;
+    cursor: pointer;
+}

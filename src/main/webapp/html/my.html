@@ -36,10 +36,15 @@ Count per page: <label>
 <script>
 
     const selectedPageSize = $('select');
-    function showAccountsPerPage() {
+    function showAccountsPerPage(pageNumber) {
+        document.querySelectorAll('#paging button').forEach(button => {
+            button.remove();
+        });
         $.get("/rest/players/count").then(accountSize => {
-            const pageSize = $('select').val();
-            const pages = Math.ceil(accountSize / pageSize)
+            const pageSize = selectedPageSize.val();
+            clearTable();
+            showPlayers(pageNumber, pageSize);
+            const pages = Math.ceil(accountSize / pageSize);
             for (let i = 0; i < pages; i++) {
                 const button = document.createElement('button');
                 button.textContent = "" + (i + 1);
@@ -74,12 +79,34 @@ Count per page: <label>
                     </tr>
                 `;
 
-                row.appendChild(createCellWithButton("edit"));
-                row.appendChild(createCellWithButton("delete"));
+                const editCell = document.createElement("td");
+                const deleteCell = document.createElement("td");
+                const editButton = createButton("edit");
+                const deleteButton = createButton("delete");
+                deleteButton.addEventListener("click", ()=> {
+                    deletePlayer(player.id, pageNumber);
+                });
+
+                editCell.appendChild(editButton);
+                deleteCell.appendChild(deleteButton);
+
+                row.appendChild(editCell);
+                row.appendChild(deleteCell);
                 document.getElementById("table").appendChild(row);
             });
         }).catch(error => {
             console.error("Error fetching players:", error);
+        });
+    }
+    function deletePlayer(id, pageNumber) {
+        $.ajax({
+            type: "DELETE",
+            url: `/rest/players/${id}`,
+        }).then(() => {
+            showAccountsPerPage(pageNumber);
+            console.log(`Player with ID ${id} deleted successfully.`);
+        }).catch(error => {
+            console.error("Error deleting player with id: " + id, error);
         });
     }
     function changePageButtonColor(pageNumber) {
@@ -88,12 +115,10 @@ Count per page: <label>
         })
         $('#button-' + pageNumber).css('color', 'red')
     }
-    function createCellWithButton (buttonName) {
+    function createButton (buttonName) {
         const button = document.createElement("button");
         button.className = buttonName + "-button";
-        const cell = document.createElement("td");
-        cell.appendChild(button);
-        return cell;
+        return button;
     }
     function clearTable() {
         document.getElementById("table").innerHTML = `
@@ -109,12 +134,13 @@ Count per page: <label>
             <th>Edit</th>
             <th>Delete</th>
         </tr>
-    `;
+
+    `
     }
     function initializePage() {
         clearTable();
         document.getElementById('paging').innerHTML = 'Pages:';
-        showAccountsPerPage();
+        showAccountsPerPage(0);
         showPlayers(0, selectedPageSize.val());
     }
 

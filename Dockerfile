@@ -1,14 +1,10 @@
-# Используем образ OpenJDK
-FROM openjdk:17-jdk-slim
-
-# Указываем рабочую директорию внутри контейнера
+FROM maven:3.8.4-openjdk-17 AS build
 WORKDIR /app
+COPY . .
+RUN mvn clean package
 
-# Копируем собранный .war файл в контейнер
-COPY target/rpg-1.0-SNAPSHOT.war app.war
-
-# Указываем команду для запуска приложения
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=build /app/target/rpg-1.0-SNAPSHOT.war app.war
 CMD ["java", "-jar", "app.war"]
-
-# Expose port (порт, который будет использоваться)
 EXPOSE 8080

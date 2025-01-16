@@ -6,34 +6,54 @@
 </head>
 <body>
 <h1>RPG admin panel</h1>
-<table id="table" class="table">
-    <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Title</th>
-        <th>Race</th>
-        <th>Profession</th>
-        <th>Level</th>
-        <th>Birthday</th>
-        <th>Banned</th>
-    </tr>
-</table>
-<script>
-    function getPlayers() {
-        return $.ajax({
-            type: "GET",
-            url: "/rest/players"
-        });
-    }
+<h2>Accounts list:</h2>
+Count per page: <label>
+    <select>
+        <option value="3">3</option>
+        <option value="7">7</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+    </select>
+</label>
 
-    function showResult() {
-        getPlayers().then(players => {
-            players.forEach((player, index) => {
+<table id="table" class="table">
+</table>
+<div id="paging" class="paging">
+    Pages:
+</div>
+<script>
+
+    const selectedPageSize = $('select');
+    function showAccountsPerPage() {
+        $.get("/rest/players/count").then(accountSize => {
+            const pageSize = $('select').val();
+            console.log(accountSize);
+            const pages = Math.ceil(accountSize / pageSize)
+            console.log(pages);
+            for (let i = 0; i < pages; i++) {
+                const button = document.createElement('button');
+                button.textContent = "" + (i + 1);
+                button.id = "button-" + i;
+                button.addEventListener('click', () => {
+                    showPlayers(i, pageSize);
+                });
+                document.getElementById('paging').appendChild(button);
+
+            }
+        }).catch(error => {
+            console.error("Error fetching account count:", error)
+        })
+    }
+    function showPlayers(pageNumber, pageSize) {
+        $.get("/rest/players", {pageNumber, pageSize}).then(players => {
+            changeButtonColor(pageNumber);
+            clearTable();
+            players.forEach((player) => {
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
                     <tr>
-                        <td>${index + 1}</td>
+                        <td>${player.id}</td>
                         <td>${player.name}</td>
                         <td>${player.title}</td>
                         <td>${player.race}</td>
@@ -50,7 +70,36 @@
             console.error("Error fetching players:", error);
         });
     }
-    window.onload = showResult;
+    function changeButtonColor(pageNumber) {
+        document.querySelectorAll('#paging button').forEach(button => {
+            $(button).css('color', 'black')
+        })
+        $('#button-' + pageNumber).css('color', 'red')
+    }
+    function clearTable() {
+        document.getElementById("table").innerHTML = `
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Title</th>
+            <th>Race</th>
+            <th>Profession</th>
+            <th>Level</th>
+            <th>Birthday</th>
+            <th>Banned</th>
+        </tr>
+    `;
+    }
+    function initializePage() {
+        clearTable();
+        document.getElementById('paging').innerHTML = 'Pages:';
+        showAccountsPerPage();
+        showPlayers(0, selectedPageSize.val());
+    }
+
+    selectedPageSize.on('change', initializePage);
+    window.onload = initializePage;
+
 </script>
 
 </body>

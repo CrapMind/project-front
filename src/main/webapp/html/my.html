@@ -19,7 +19,38 @@
     </tr>
 </table>
 <script>
+    function getPlayers() {
+        return $.ajax({
+            type: "GET",
+            url: "/rest/players"
+        });
+    }
 
+    function showResult() {
+        getPlayers().then(players => {
+            players.forEach((player, index) => {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${player.name}</td>
+                        <td>${player.title}</td>
+                        <td>${player.race}</td>
+                        <td>${player.profession}</td>
+                        <td>${player.level}</td>
+                        <td>${new Date(player.birthday).toLocaleDateString()}</td>
+                        <td>${player.banned ? 'Yes' : 'No'}</td>
+                    </tr>
+                `;
+
+                document.getElementById("table").appendChild(row);
+            });
+        }).catch(error => {
+            console.error("Error fetching players:", error);
+        });
+    }
+    window.onload = showResult;
 </script>
 
 </body>

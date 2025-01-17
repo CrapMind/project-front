@@ -50,6 +50,7 @@ Count per page: <label>
 
     // Variable for storing the current page number
     const selectedPageSize = $('#page-selector');
+    const BASE_URL = "https://rpg-admin-panel-gij2.onrender.com";
     let currentPageNumber = 0;
 
     // Possible values for races and professions
@@ -95,7 +96,7 @@ Count per page: <label>
         document.querySelectorAll('#paging button').forEach(button => {
             button.remove(); // Remove old buttons
         });
-        $.get("/rest/players/count").then(accountSize => {
+        $.get(`${BASE_URL}/rest/players/count`).then(accountSize => {
 
             const pageSize = selectedPageSize.val(); // Variable that stores number of records on the page
             clearTable();
@@ -118,7 +119,7 @@ Count per page: <label>
     }
     // Getting and displaying players by current page and selected records
     function showPlayers(pageNumber, pageSize) {
-        $.get("/rest/players", {pageNumber, pageSize}).then(players => {
+        $.get(`${BASE_URL}/rest/players`, {pageNumber, pageSize}).then(players => {
             changePageButtonColor(pageNumber); // Highlight the active page
             clearTable();
             players.forEach((player) => {
@@ -166,7 +167,7 @@ Count per page: <label>
     function deletePlayer(id, pageNumber) {
         $.ajax({
             type: "DELETE",
-            url: `/rest/players/${id}`,
+            url: `${BASE_URL}/rest/players/${id}`,
         }).then(() => {
             showAccountsPerPage(pageNumber); // Reload the table
             console.log(`Player with ID ${id} deleted successfully.`);
@@ -227,7 +228,7 @@ Count per page: <label>
             };
             $.ajax({
                 type: "POST",
-                url: `/rest/players/${id}`,
+                url: `${BASE_URL}/rest/players/${id}`,
                 data: JSON.stringify(playerInfo),
                 contentType: "application/json"
             }).then(() => {
@@ -270,7 +271,7 @@ Count per page: <label>
         console.log(playerParams)
             $.ajax({
                 type: "POST",
-                url: `/rest/players`,
+                url: `${BASE_URL}/rest/players`,
                 data: JSON.stringify(playerParams),
                 contentType: "application/json"
             }).then(() => {
